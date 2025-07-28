@@ -27,87 +27,79 @@ from pymeasure.instruments import Instrument, SCPIMixin
 from pymeasure.instruments.validators import strict_discrete_set
 
 
-class RigolDM3068(SCPIMixin, Instrument):
-    """ Represents the Rigol DM3068 Multimeter and
+class Victor8045M(SCPIMixin, Instrument):
+    """ Represents the Victor 8045M Multimeter and
     provides a high-level interface for interacting with the instrument.
 
     .. code-block:: python
 
-        dmm = RigolDM3068("GPIB::1")
+        dmm = Victor8045M("COM1")
 
     """
     # Below: stop_bits: 20 comes from
     # https://pyvisa.readthedocs.io/en/latest/api/constants.html#pyvisa.constants.StopBits
-    def __init__(self, adapter, name="Rigol DM3068", **kwargs):
+    def __init__(self, adapter, name="Victor 8045M", **kwargs):
         super().__init__(
             adapter,
             name,
+            asrl={'baud_rate': 115200, 'data_bits': 8, 'parity': 0, 'stop_bits': 10},
             **kwargs
         )
 
-    # we keep the function names the same as the HP 34401A
     FUNCTIONS = {
         "DCV"        : "VOLT:DC", 
         "ACV"        : "VOLT:AC", 
         "DCI"        : "CURR:DC", 
         "ACI"        : "CURR:AC",
         "R2W"        : "RES", 
-        "R4W"        : "FRES", 
         "FREQ"       : "FREQ",
         "PERIOD"     : "PER", 
         "CONTINUITY" : "CONT", 
         "DIODE"      : "DIOD",
         "CAP"        : "CAP",
+        "TEMP"       : "TEMP:RTD"
     }
 
-    # mapping needed to take care of the inconsistency in the function names returned
-    FUNCTIONS_R = {
-        "DCV"        : "VOLT:DC", 
-        "ACV"        : "VOLT:AC", 
-        "DCI"        : "CURR:DC", 
-        "ACI"        : "CURR:AC",
-        "2WR"        : "RES", 
-        "4WR"        : "FRES", 
-        "FREQ"       : "FREQ",
-        "PERI"       : "PER", 
-        "CONT"       : "CONT", 
-        "DIODE"      : "DIOD",
-        "CAP"        : "CAP",
-    }
-    
-    BOOL_MAPPINGS = {True: 1, False: 0}
-    
-    function = Instrument.control(
-        ":FUNC?", ":FUNC:%s",
+    function = Instrument.setting(
+        "CONF:%s",
         """Confgure the measurement function.
 
         Allowed values: "DCV", "ACV", "DCI", "ACI",
-        "2WR", "4WR", "FREQ", "PERIOD", "CONTINUITY", "DIODE", "CAP".""",
+        "R2W", "FREQ", "PERIOD", "CONTINUITY", "DIODE", "CAP".""",
         validator=strict_discrete_set,
         values=FUNCTIONS,
         map_values=True,
-        get_process=lambda v: RigolDM3068.FUNCTIONS_R[v]
     )
     
-    def beep(self):
-        """This command causes the multimeter to beep once."""
-        self.write("SYST:BEEP")
+    reading = Instrument.measurement(
+        "MEAS?",
+        """If in dual display, return the primary and secondary values, else return the primary value"""
+    )
+
+    reading_primary = Instrument.measurement(
+        "MEAS1?",
+        """Return the primary value"""
+    )
+
+    reading_secondary = Instrument.measurement(
+        "MEAS2?",
+        """Return the secondary value"""
+    )
     
-    beeper_enabled = Instrument.control(
-        "SYST:BEEP:STAT?", "SYST:BEEP:STAT %s",
-        """Control whether the beeper is enabled.""",
+    rate = Instrument.control(
+        "RATE?", "RATE %s",
+        """Configure the measurement rate.
+        
+        Allowed values: "F", "M", "S" """,
+        values=["F", "M", "S"],
+        validator=strict_discrete_set
+    )
+    
+    dcv_range = Instrument.control(
+        "RANGE?", "RANGE %s",
+        """Configure the range of the DCV measurement.""",
+        values = { 0.05:1, 0.5:2, 5:3, 50:4, 500:5, 1000:6 },
         validator=strict_discrete_set,
-        values=BOOL_MAPPINGS,
         map_values=True,
+        get_process=lambda v : v.replace('V', '').strip()
     )
-
-    scpi_version = Instrument.measurement(
-        "SYST:VERS?",
-        """The SCPI version of the multimeter.""",
-    )
-    
-    voltage_dc = Instrument.measurement(
-        ":MEAS:VOLT:DC?",
-        "DC voltage, in Volts",
-    )
-
