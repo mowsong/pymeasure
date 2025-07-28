@@ -22,6 +22,17 @@
 # THE SOFTWARE.
 #
 
-from .rigol_dg800 import DG800
-from .rigol_dm3068 import RigolDM3068
-from .rigol_ds1054z import RigolDS1054Z
+from warnings import warn
+from pymeasure.instruments.validators import strict_discrete_set
+from pymeasure.instruments.hp.hp34401A import HP34401A
+
+class Agilent34401A(HP34401A):
+    # Below: stop_bits: 20 comes from
+    # https://pyvisa.readthedocs.io/en/latest/api/constants.html#pyvisa.constants.StopBits
+    def __init__(self, adapter, name="Agilent 34401A", **kwargs):
+        super().__init__(
+            adapter,
+            name,
+            **kwargs
+        )
+

@@ -40,3 +40,5 @@ from .agilentB298x import (AgilentB2981,
                            AgilentB2983,
                            AgilentB2985,
                            AgilentB2987)
+
+from .agilent34401A import Agilent34401A
