@@ -22,8 +22,19 @@
 # THE SOFTWARE.
 #
 
-from .rigol_dg800 import DG800
-from .rigol_dm3068 import RigolDM3068
-from .rigol_ds1054z import RigolDS1054Z
-from .rigol_dho800 import RigolDHO800
-from .rigol_dg1022u import RigolDG1022U
+from pymeasure.instruments import Instrument, Channel, SCPIMixin
+from pymeasure.instruments.validators import truncated_discrete_set, truncated_range
+
+
+class RigolDG1022U(SCPIMixin, Instrument):
+    """ Represents the Rigol DG1022U Function Generator and
+    provides a high-level interface for interacting with the instrument.
+    """
+    
+
+    def __init__(self, adapter, name="Rigol DG1022U", **kwargs):
+        super().__init__(
+            adapter,
+            name,
+            **kwargs
+        ) 

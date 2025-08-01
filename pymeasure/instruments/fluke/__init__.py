@@ -23,3 +23,5 @@
 #
 
 from .fluke7341 import Fluke7341
+
+from .fluke8808a import Fluke8808A

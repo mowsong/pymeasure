@@ -23,7 +23,7 @@
 #
 
 from pymeasure.instruments import Instrument, Channel, SCPIMixin
-from pymeasure.instruments.validators import truncated_discrete_set, truncated_range, strict_discrete_set
+from pymeasure.instruments.validators import truncated_discrete_set, truncated_range
 
 class VoltageChannel(Channel):
     vertical_division = Channel.control(
@@ -44,35 +44,20 @@ class VoltageChannel(Channel):
         map_values=True,
         get_process=lambda v: v.split(" ", 1)[-1][0],
     )
-
-class TriggerChannel(Channel):
-
-
-    trigger_level = Channel.measurement(
-        "TRLV?",
-        docs="""Get the current trigger level as a dict with keys:
-        - "source": trigger source whose level will be changed (str, {EX,EX/5,C1,C2})
-        - "level": Level at which the trigger will be set (float)
-
-        """,
-        get_process=lambda v: {
-            "source": v.split(":", 1)[0],
-            "level": float(v.split(" ", 1)[-1][:-2]),
-        },
-    )        
+    
         
-class RigolDS1054Z(SCPIMixin, Instrument):
-    """ Represents the Rigol DS1054Z Oscilloscope and
+class RigolDHO800(SCPIMixin, Instrument):
+    """ Represents the Rigol DHO800 Oscilloscope and
     provides a high-level interface for interacting with the instrument.
 
     .. code-block:: python
 
-        dmm = RigolDS1054Z("GPIB::1")
+        dmm = RigolDHO800("GPIB::1")
 
     """
     # Below: stop_bits: 20 comes from
     # https://pyvisa.readthedocs.io/en/latest/api/constants.html#pyvisa.constants.StopBits
-    def __init__(self, adapter, name="Rigol DS1054Z", **kwargs):
+    def __init__(self, adapter, name="Rigol DHO800", **kwargs):
         super().__init__(
             adapter,
             name,
@@ -81,40 +66,10 @@ class RigolDS1054Z(SCPIMixin, Instrument):
         
     channel_1 = Instrument.ChannelCreator(VoltageChannel, "1")
     channel_2 = Instrument.ChannelCreator(VoltageChannel, "2")
-    trigger = Instrument.ChannelCreator(TriggerChannel, "")
-    
-    timebase_scale = Instrument.control(
-        ":TIM:SCAL?",
-        ":TIM:SCAL %.2e",
+
+    timebase = Instrument.control(
+        ":TIMEBASE:MAIN:SCALE?",
+        ":TIMEBASE:MAIN:SCALE %.2e",
         "Control the time division to the closest possible value, rounding downwards, in seconds.",
     )
     
-    timebase_mode = Instrument.control(
-        "TIM:MODE?", "TIM:MODE %s",
-        """
-        Configure the mode of the horizontal timebase.
-        """,
-        validator=strict_discrete_set,
-        values=['MAIN', 'XY', 'ROLL']
-    ) 
-    
-    timebase_offset = Instrument.control(
-        "TIM:OFFSET?", "TIM:OFFSET %e",
-        """
-        Configure the timebase offset.
-        """,
-    ) 
-
-    def save_screen(self, filename='ds1054z_capture.png', format='PNG', invert=False):
-        self.write(f":DISP:DATA? ON, {'ON' if invert else 'OFF'}, {format}")
-        raw_data = self.read_bytes(count=-1, break_on_termchar=True)
-        """
-        1st byte is #, the start denoter of the data stream
-        # 2nd byte is N, width of the data length in the TMC header
-        # For example, #9001152054; wherein N is 9 and 001152054 is the length of the effective data
-        """
-        header_skips = int(chr(raw_data[1])) + 2
-        with open(filename, 'wb') as fout:
-            fout.write(raw_data[header_skips:])
-        
-        

@@ -22,8 +22,4 @@
 # THE SOFTWARE.
 #
 
-from .rigol_dg800 import DG800
-from .rigol_dm3068 import RigolDM3068
-from .rigol_ds1054z import RigolDS1054Z
-from .rigol_dho800 import RigolDHO800
-from .rigol_dg1022u import RigolDG1022U
+from .extreme5000 import Extreme5000
