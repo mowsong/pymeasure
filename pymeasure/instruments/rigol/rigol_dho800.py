@@ -23,7 +23,7 @@
 #
 
 from pymeasure.instruments import Instrument, Channel, SCPIMixin
-from pymeasure.instruments.validators import truncated_discrete_set, truncated_range
+from pymeasure.instruments.validators import truncated_discrete_set, truncated_range, strict_discrete_set
 
 class VoltageChannel(Channel):
     vertical_division = Channel.control(
@@ -67,9 +67,36 @@ class RigolDHO800(SCPIMixin, Instrument):
     channel_1 = Instrument.ChannelCreator(VoltageChannel, "1")
     channel_2 = Instrument.ChannelCreator(VoltageChannel, "2")
 
-    timebase = Instrument.control(
-        ":TIMEBASE:MAIN:SCALE?",
-        ":TIMEBASE:MAIN:SCALE %.2e",
+    timebase_scale = Instrument.control(
+        ":TIM:SCAL?",
+        ":TIM:SCAL %.2e",
         "Control the time division to the closest possible value, rounding downwards, in seconds.",
     )
     
+    timebase_mode = Instrument.control(
+        "TIM:MODE?", "TIM:MODE %s",
+        """
+        Configure the mode of the horizontal timebase.
+        """,
+        validator=strict_discrete_set,
+        values=['MAIN', 'XY', 'ROLL']
+    ) 
+    
+    timebase_offset = Instrument.control(
+        "TIM:OFFSET?", "TIM:OFFSET %e",
+        """
+        Configure the timebase offset.
+        """,
+    )
+    
+    def save_screen(self, filename='ds1054z_capture.png', format='PNG'):
+        self.write(f":DISP:DATA? {format}")
+        raw_data = self.read_bytes(count=-1, break_on_termchar=True)
+        """
+        1st byte is #, the start denoter of the data stream
+        # 2nd byte is N, width of the data length in the TMC header
+        # For example, #9001152054; wherein N is 9 and 001152054 is the length of the effective data
+        """
+        header_skips = int(chr(raw_data[1])) + 2
+        with open(filename, 'wb') as fout:
+            fout.write(raw_data[header_skips:]) 

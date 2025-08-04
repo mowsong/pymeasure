@@ -35,7 +35,8 @@ class Fluke8808A(SCPIMixin, Instrument):
         """Reset the instrument."""
         self.write("*RST")
         self.wait_for(3)
-        self.read()  # expected a "=>"       
+        # self.read()  # expected a "=>"  
+        self.check_get_errors()     
         
     format = Instrument.control(
         "FORMAT?", "FORMAT %d",
@@ -64,6 +65,25 @@ class Fluke8808A(SCPIMixin, Instrument):
         Returns the value shown on the primary display
         """,
         check_get_errors=True
+    )
+    
+    range_auto = Instrument.control(
+        "AUTO?", "AUTO",
+        """
+        COnfigure the autoranging mode
+        """,
+        check_get_errors=True,
+        check_set_errors=True
+    )
+    
+    range = Instrument.control(
+        "RANGE1?", "RANGE %s",
+        """
+        Stes the primary display to <value range> where <value range> is the number
+        in the Range Value column of Table 4-11A
+        """,
+        check_get_errors=True,
+        check_set_errors=True
     )
     
     def check_set_errors(self):
