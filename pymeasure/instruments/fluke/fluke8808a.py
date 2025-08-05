@@ -67,14 +67,11 @@ class Fluke8808A(SCPIMixin, Instrument):
         check_get_errors=True
     )
     
-    range_auto = Instrument.control(
-        "AUTO?", "AUTO",
-        """
-        COnfigure the autoranging mode
-        """,
-        check_get_errors=True,
-        check_set_errors=True
-    )
+    def auto_ranging(self):
+        """Use autoranging."""
+        self.write("AUTO")
+        self.wait_for(1)
+        self.check_get_errors()     
     
     range = Instrument.control(
         "RANGE1?", "RANGE %s",
@@ -84,6 +81,19 @@ class Fluke8808A(SCPIMixin, Instrument):
         """,
         check_get_errors=True,
         check_set_errors=True
+    )
+    
+    rate = Instrument.control(
+        "RATE?", "RATE %s",
+        """
+        Sets the measurement rate.
+        
+        Available rates are 'S', 'M', 'F'
+        """,
+        validator=strict_discrete_set,
+        values=['S', 'M', 'F'],
+        check_set_errors=True,
+        check_get_errors=True
     )
     
     def check_set_errors(self):
