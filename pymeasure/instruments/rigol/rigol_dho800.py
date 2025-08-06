@@ -293,3 +293,30 @@ class RigolDHO800(SCPIMixin, Instrument):
     
     def counter_statistics_clear(self):
         self.write(":COUN:TOT:CLE")
+        
+    dvm_value = Instrument.measurement(
+        "DVM:CURR?",
+        """Read the DVM value."""
+    )
+        
+    dvm_enabled = Instrument.control(
+        ":DVM:ENAB?", ":DVM:ENAB %d",
+        """Control the DVM on/off.""",
+        validator=strict_discrete_set,
+        map_values=True,
+        values={True: 1, "on": 1, "ON": 1, False: 0, "off": 0, "OFF": 0}        
+    )
+    
+    dvm_source = Instrument.control(
+        ":DVM:SOUR?", "DVM:SOUR %s",
+        """Control the DVM signal source.""",
+        validator=strict_discrete_set,
+        values=["CHAN1", "CHAN2", "CHAN3", "CHAN4"]        
+    )
+    
+    dvm_mode = Instrument.control(
+        ":DVM:MODE?", ":DVM:MODE %s",
+        """Contorl the DVM measurement mode.""",
+        validator=strict_discrete_set,
+        values=["ACRMS", "DC", "DCRMS"]        
+    )
