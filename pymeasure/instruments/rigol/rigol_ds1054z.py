@@ -26,23 +26,81 @@ from pymeasure.instruments import Instrument, Channel, SCPIMixin
 from pymeasure.instruments.validators import truncated_discrete_set, truncated_range, strict_discrete_set
 
 class VoltageChannel(Channel):
-    vertical_division = Channel.control(
-        "C{ch}:VDIV?",
-        "C{ch}:VDIV %.2eV",
-        "Control the vertical sensitivity of a channel in V/divisions.",
-        validator=truncated_range,
-        values=[2e-3, 10],
-        get_process=lambda v: float(v.split(" ", 1)[-1][:-1]),
+    
+    bwlimit = Channel.control(
+        ":CHAN{ch}:BWL?", ":CHAN{ch}:BWL %s",
+        """Control the 20MHz bandwidth limit of a channel.""",
+        validator=strict_discrete_set,
+        values = ["20M", "OFF"]
+    )
+    
+    coupling = Channel.control(
+        "CHAN{ch}:COUP?", "CHAN{ch}:COUP %s",
+        """Control the channel coupling mode.""",
+        validator=strict_discrete_set,
+        values={"DC", "AC", "GND"},
+    )
+    
+    display = Channel.control(
+        "CHAN{ch}:DISP?", "CHAN{ch}:DISP %d",
+        """Control the channel on/off.""",
+        validator=strict_discrete_set,
+        map_values=True,
+        values={True: 1, "on": 1, "ON": 1, False: 0, "off": 0, "OFF": 0}
+    )
+    
+    offset = Channel.control(
+        "CHAN{ch}:OFFS?", "CHAN{ch}:OFFS %.2e",
+        "Control the vertical offset of a channel in V.",
     )
 
-    coupling = Channel.control(
-        "C{ch}:CPL?",
-        "C{ch}:CPL %s1M",
-        "Control the channel coupling mode.(DC or AC)",
-        validator=truncated_discrete_set,
-        values={"DC": "D", "AC": "A"},
+    invert = Channel.control(
+        "CHAN{ch}:INV?", "CHAN{ch}:INV %d",
+        """Control the channel inversion.""",
+        validator=strict_discrete_set,
         map_values=True,
-        get_process=lambda v: v.split(" ", 1)[-1][0],
+        values={True: 1, "on": 1, "ON": 1, False: 0, "off": 0, "OFF": 0}
+    )
+
+    scale = Channel.control(
+        "CHAN{ch}:SCAL?", "CHAN{ch}:SCAL %.2e",
+        "Control the vertical scale of a channel in V/div.",
+        validator=truncated_range,
+        values=[500e-6, 10]
+    )
+
+    attenuation = Channel.control(
+        "CHAN{ch}:PROB?", "CHAN{ch}:PROB %s",
+        "Control the probe ratio a channel.",
+        validator=strict_discrete_set,
+        values=[ (i * pow(10, base)) for base in range(-2, 3) for i in [1, 2, 5] ] + [1000]
+    )
+
+    label_enabled = Channel.control(
+        "CHAN{ch}:LAB:SHOW?", "CHAN{ch}:LAB:SHOW %d",
+        """Control the label display of a channel.""",
+        validator=strict_discrete_set,
+        map_values=True,
+        values={True: 1, "on": 1, "ON": 1, False: 0, "off": 0, "OFF": 0}
+    )
+
+    label = Channel.control(
+        ":CHAN{ch}:LAB:CONT?", ":CHAN{ch}:LAB:CONT %s",
+        """Control the label string of a channel.""",
+    )
+    
+    vernier_enabled = Channel.control(
+        "CHAN{ch}:VERN?", "CHAN{ch}:VERN %d",
+        """Control the fine adjustment on/off of the vertical scale of a channel.""",
+        validator=strict_discrete_set,
+        map_values=True,
+        values={True: 1, "on": 1, "ON": 1, False: 0, "off": 0, "OFF": 0}
+    )
+
+    # this is just the offset
+    position = Channel.control(
+        "CHAN{ch}:POS?", "CHAN{ch}:POS %.2e",
+        "Control the vertical offset of a channel in V.",
     )
 
 class TriggerChannel(Channel):
@@ -79,15 +137,47 @@ class RigolDS1054Z(SCPIMixin, Instrument):
             **kwargs
         )
         
-    channel_1 = Instrument.ChannelCreator(VoltageChannel, "1")
-    channel_2 = Instrument.ChannelCreator(VoltageChannel, "2")
-    trigger = Instrument.ChannelCreator(TriggerChannel, "")
+    ch_1 = Instrument.ChannelCreator(VoltageChannel, 1)    
+    ch_2 = Instrument.ChannelCreator(VoltageChannel, 2)    
+    ch_3 = Instrument.ChannelCreator(VoltageChannel, 3)    
+    ch_4 = Instrument.ChannelCreator(VoltageChannel, 4)    
     
     timebase_scale = Instrument.control(
         ":TIM:SCAL?",
         ":TIM:SCAL %.2e",
         "Control the time division to the closest possible value, rounding downwards, in seconds.",
     )
+
+    def opc(self):
+        self.write("*OPC")
+    
+    def is_opc(self):
+        return self.ask("*OPC?") 
+       
+    def clear(self):
+        """Clear all the waveforms on the screen."""
+        self.write(":CLE")
+        
+    def run(self):
+        """Starts running the oscilloscope."""
+        self.write("RUN")
+    
+    def stop(self):
+        """Stops running the oscilloscope."""
+        self.write(":STOP")
+    
+    def single(self):
+        """Perfoms a single trigger."""
+        self.write(":SING") 
+    
+    def force_trigger(self):
+        """Generates a trigger signal forcefully."""
+        self.write(":TFOR")
+    
+    def autoset(self):
+        """Enabled the waveform auto setting."""           
+        self.write(":AUT")
+   
     
     timebase_mode = Instrument.control(
         "TIM:MODE?", "TIM:MODE %s",
@@ -117,4 +207,14 @@ class RigolDS1054Z(SCPIMixin, Instrument):
         with open(filename, 'wb') as fout:
             fout.write(raw_data[header_skips:])
         
-        
+    counter_value = Instrument.measurement(
+        ":MEAS:COUN:VAL?",
+        """Queries the measurement value of the frequency counter.""",
+    )
+
+    counter_source = Instrument.control(
+        ":MEAS:COUN:SOUR?", ":MEAS:COUN:SOUR %s",
+        """Control the source of the frequency counter.""",
+        validator=strict_discrete_set,
+        values=["CHAN1", "CHAN2", "CHAN3", "CHAN4"]
+    )

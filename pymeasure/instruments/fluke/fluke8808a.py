@@ -59,7 +59,7 @@ class Fluke8808A(SCPIMixin, Instrument):
         check_get_errors=True
     )
     
-    value = Instrument.measurement(
+    reading = Instrument.measurement(
         "VAL1?", 
         """
         Returns the value shown on the primary display
