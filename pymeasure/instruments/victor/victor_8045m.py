@@ -26,6 +26,9 @@ from warnings import warn
 from pymeasure.instruments import Instrument, SCPIMixin
 from pymeasure.instruments.validators import strict_discrete_set
 
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 class Victor8045M(SCPIMixin, Instrument):
     """ Represents the Victor 8045M Multimeter and
@@ -45,7 +48,7 @@ class Victor8045M(SCPIMixin, Instrument):
             asrl={'baud_rate': 115200, 'data_bits': 8, 'parity': 0, 'stop_bits': 10},
             **kwargs
         )
-
+        
     FUNCTIONS = {
         "DCV"        : "VOLT:DC", 
         "ACV"        : "VOLT:AC", 

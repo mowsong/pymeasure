@@ -1,10 +1,33 @@
-
-import logging
+#
+# This file is part of the PyMeasure package.
+#
+# Copyright (c) 2013-2025 PyMeasure Developers
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
 
 from pymeasure.instruments import Instrument, SCPIMixin
 from pymeasure.instruments.validators import strict_discrete_set, strict_range
 
-
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 class Fluke8808A(SCPIMixin, Instrument):
     """ Represents the compact constant temperature bath from Fluke.
@@ -20,8 +43,6 @@ class Fluke8808A(SCPIMixin, Instrument):
                   'stop_bits': 20, 'timeout' : 5000},
             **kwargs
         )
-        self.log = logging.getLogger(__name__)
-        self.log.addHandler(logging.NullHandler())
 
     id = Instrument.measurement(
         "*IDN?",
@@ -101,12 +122,12 @@ class Fluke8808A(SCPIMixin, Instrument):
 
         Called if :code:`check_set_errors=True` is set for that property.
         """
-        self.log.debug("check_set_propery")
+        logger.debug("check_set_propery")
         try:
             reply = self.read().strip()
-            self.log.debug(reply)
+            logger.debug(reply)
         except Exception as exc:
-            log.exception("Setting a property failed.", exc_info=exc)
+            logger.exception("Setting a property failed.", exc_info=exc)
             raise
         else:
             return []
@@ -116,12 +137,12 @@ class Fluke8808A(SCPIMixin, Instrument):
 
         Called if :code:`check_get_errors=True` is set for that property.
         """
-        self.log.debug('check_get_errors')
+        logger.debug('check_get_errors')
         try:
             reply = self.read()
-            self.log.debug(reply)
+            logger.debug(reply)
         except Exception as exc:
-            log.exception("Getting a property failed.", exc_info=exc)
+            logger.exception("Getting a property failed.", exc_info=exc)
             raise
         else:
             return []

@@ -26,6 +26,8 @@ from warnings import warn
 from pymeasure.instruments import Instrument, SCPIMixin
 from pymeasure.instruments.validators import strict_discrete_set
 
+import logging
+logger = logging.getLogger(__name__)
 
 class RigolDM3068(SCPIMixin, Instrument):
     """ Represents the Rigol DM3068 Multimeter and

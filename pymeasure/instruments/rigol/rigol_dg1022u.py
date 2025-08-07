@@ -25,6 +25,8 @@
 from pymeasure.instruments import Instrument, Channel, SCPIMixin
 from pymeasure.instruments.validators import truncated_discrete_set, truncated_range
 
+import logging
+logger = logging.getLogger(__name__)
 
 class RigolDG1022U(SCPIMixin, Instrument):
     """ Represents the Rigol DG1022U Function Generator and
@@ -38,3 +40,5 @@ class RigolDG1022U(SCPIMixin, Instrument):
             name,
             **kwargs
         ) 
+        self.log = logging.getLogger(__name__)
+        self.log.addHandler(logging.NullHandler())
