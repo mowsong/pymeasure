@@ -81,7 +81,7 @@ class  IT6322A(SCPIMixin, Instrument):
     ch_3 = Instrument.ChannelCreator(VoltageChannel, 3)
         
 
-    def __init__(self, adapter, name="Rigol DG1022U", **kwargs):
+    def __init__(self, adapter, name="IT6322A", **kwargs):
         super().__init__(
             adapter,
             name,

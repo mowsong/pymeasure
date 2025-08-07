@@ -10,7 +10,7 @@ class Fluke8808A(SCPIMixin, Instrument):
     """ Represents the compact constant temperature bath from Fluke.
     """
 
-    def __init__(self, adapter, name="Fluke 7341", **kwargs):
+    def __init__(self, adapter, name="Fluke 8808A", **kwargs):
         kwargs.setdefault('write_termination', '\r\n')
         kwargs.setdefault('read_termination', '\r\n')
         super().__init__(
