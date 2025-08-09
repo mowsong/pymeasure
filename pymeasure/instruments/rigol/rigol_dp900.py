@@ -22,18 +22,13 @@
 # THE SOFTWARE.
 #
 
-import logging
-
+from warnings import warn
 from pymeasure.instruments import Instrument, Channel, SCPIMixin
-from pymeasure.instruments.validators import strict_range, truncated_discrete_set, truncated_range, strict_discrete_set
-
-log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
-
+from pymeasure.instruments.validators import strict_discrete_set, strict_range
 
 class VoltageChannel(Channel):
     voltage_setpoint = Channel.control(
-        "INST:NSEL {ch}; VOLT?", "INST:NSEL {ch}; VOLT %g",
+        "SOUR{ch}:VOLT?", "SOUR{ch}:VOLT %g",
         """Control the output voltage of this channel, range depends on channel.""",
         validator=strict_range,
         values=[0, 30],
@@ -41,53 +36,52 @@ class VoltageChannel(Channel):
     )
 
     current_setpoint = Channel.control(
-        "INST:NSEL {ch}; CURR?", "INST:NSEL {ch}; CURR %g",
+        "SOUR{ch}:CURR?", "SOUR{ch}:CURR %g",
         """Control the current limit of this channel, range depends on channel.""",
         validator=strict_range,
-        values=[0, 1],
+        values=[0, 3],
         dynamic=True,
     )
 
-    voltage = Channel.measurement(
-        "INST:NSEL {ch}; MEAS:VOLT?",
-        """Measure actual voltage of this channel."""
-    )
-
-    current = Channel.measurement(
-        "INST:NSEL {ch}; MEAS:CURR?",
-        """Measure the actual current of this channel."""
-    )
-
-
-    power = Channel.measurement(
-        "INST:NSEL {ch}; MEAS:POW?",
-        """Measure the actual power of this channel."""
-    )
-
     output_enabled = Channel.control(
-        "INST:NSEL {ch}; CHAN:OUTP?", "INST:NSEL {ch}; CHAN:OUTP %s",
+        "OUTP:STAT? CH{ch}", "OUTP:STAT CH{ch}, %d",
         """Control whether the channel output is enabled (boolean).""",
         validator=strict_discrete_set,
         map_values=True,
         values={True: 1, False: 0},
     )
 
+    voltage = Channel.measurement(
+        "MEAS:VOLT? CH{ch}",
+        """Measure actual voltage of this channel."""
+    )
+
+    current = Channel.measurement(
+        "MEAS:CURR? CH{ch}",
+        """Measure the actual current of this channel."""
+    )
+
+    power = Channel.measurement(
+        "MEAS:POW? CH{ch}",
+        """Measure the actual current of this channel."""
+    )
+    
     ovp_setpoint = Channel.control(
-        "INST:NSEL {ch}; VOLT:PROT?", "INST:NSEL {ch}; VOLT:PROT %g",
+        "SOUR{ch}:VOLT:PROT?", "SOUR{ch}:VOLT:PROT %g",
         """Control the over-voltage protection level""",
         validator=strict_range,
         values=[0, 30],
     )
     
     ocp_setpoint = Channel.control(
-        "INST:NSEL {ch}; CURR:PROT?", "INST:NSEL {ch}; CURR:PROT %g",
+        "SOUR{ch}:CURR:PROT?", "SOUR{ch}:CURR:PROT %g",
         """Control the over-current protection level""",
         validator=strict_range,
         values=[0, 3],
     )
-   
+    
     ovp_enabled = Channel.control(
-        "INST:NSEL {ch}; VOLT:PROT:STAT?", "INST:NSEL {ch}; VOLT:PROT:STAT %d",
+        "SOUR{ch}:VOLT:PROT:STAT?", "SOUR{ch}:VOLT:PROT:STAT %d",
         """Control the over-voltage protection on/off""",
         validator=strict_discrete_set,
         map_values=True,
@@ -95,22 +89,22 @@ class VoltageChannel(Channel):
     )
     
     ocp_enabled = Channel.control(
-        "INST:NSEL {ch}; CURR:PROT:STAT?", "INST:NSEL {ch}; CURR:PROT:STAT %d",
+        "SOUR{ch}:CURR:PROT:STAT?", "SOUR{ch}:CURR:PROT:STAT %d",
         """Control the over-current protection on/off""",
         validator=strict_discrete_set,
         map_values=True,
         values={True: 1, False: 0}
     )
-
+    
     ovp_tripped = Instrument.measurement(
-        "INST:NSEL {ch}; VOLT:PROT:TRIP?",
+        "SOUR{ch}:VOLT:PROT:TRIP?",
         """The over-voltage protection trip status.""",
         map_values=True,
         values={True: 1, False: 0}
     )
 
     ocp_tripped = Instrument.measurement(
-        "INST:NSEL {ch}; CURR:PROT:TRIP?",
+        "SOUR{ch}:CURR:PROT:TRIP?",
         """Read the over-voltage protection trip status.""",
         map_values=True,
         values={True: 1, False: 0}
@@ -118,34 +112,35 @@ class VoltageChannel(Channel):
     
     def ovp_clear(self):
         """Clear the ovp flag and enable the output,"""
-        self.write("INST:NSEL {ch}:VOLT:PROT:CLE")
+        self.write("SOUR{ch}:VOLT:PROT:CLE")
             
     def ocp_clear(self):
         """Clear the ocp flag and enable the output,"""
-        self.write("INST:NSEL {ch}:CURR:PROT:CLE")
-            
-            
-class  IT6322A(SCPIMixin, Instrument):
-    """ Represents the ITECH IT6332A and
+        self.write("SOUR{ch}:CURR:PROT:CLE")
+        
+
+class RigolDP900(SCPIMixin, Instrument):
+    """ Represents the Rigol DP900 Power Supply and
     provides a high-level interface for interacting with the instrument.
+
     """
 
     ch_1 = Instrument.ChannelCreator(VoltageChannel, 1)
     ch_2 = Instrument.ChannelCreator(VoltageChannel, 2)
     ch_3 = Instrument.ChannelCreator(VoltageChannel, 3)
-
-    def __init__(self, adapter, name="IT6322A", **kwargs):
+    
+    def __init__(self, adapter, name="Rigol DP900", **kwargs):
         super().__init__(
             adapter,
             name,
             **kwargs
-        ) 
-        
+        )
+    
     def beep(self):
         """This command causes the multimeter to beep once."""
-        self.write("SYST:BEEP")
-        
-    # System related commands
+        self.write("SYST:BEEP:IMM")
+    
+    # System related commands    
     remote_control_enabled = Instrument.setting(
         "SYST:%s",
         """Control whether remote control is enabled.""",
@@ -159,5 +154,5 @@ class  IT6322A(SCPIMixin, Instrument):
         """
         Select the channel
         """,
-        get_process=lambda v: int(v)        
-    )
+        get_process=lambda v: int(v) 
+    )    

@@ -23,25 +23,11 @@
 #
 
 import logging
-
 from pymeasure.instruments import Instrument, Channel, SCPIMixin
 from pymeasure.instruments.validators import strict_range, truncated_discrete_set, truncated_range, strict_discrete_set
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
-
-
-class VoltageChannel(Channel):
-
-    voltage = Channel.measurement(
-        "APPL CH{ch}; MEAS:VOLT?",
-        """Measure actual voltage of this channel."""
-    )
-
-    current = Channel.measurement(
-        "APPL CH{ch}; MEAS:CURR?",
-        """Measure the actual current of this channel."""
-    )
 
 class  L303SP(SCPIMixin, Instrument):
     """ Represents the eTM L303SP and
@@ -58,7 +44,8 @@ class  L303SP(SCPIMixin, Instrument):
                   'stop_bits': 20, 'timeout' : 5000},
             **kwargs
         ) 
-        
+
+                        
     def beep(self):
         """This command causes the multimeter to beep once."""
         self.write("SYST:BEEP")
@@ -72,18 +59,8 @@ class  L303SP(SCPIMixin, Instrument):
         map_values=True,
     )
     
-    output_enabled = Instrument.control(
-        "OUTP:STAT?",
-        "OUTP:STAT %s",
-        """Control whether the output is enabled (boolean).""",
-        validator=strict_discrete_set,
-        map_values=True,
-        values={True: 'ON', False: 'OFF'},
-    )
-    
     voltage_setpoint = Instrument.control(
-        "VOLT?",
-        "VOLT %g",
+        "VOLT?", "VOLT %g",
         """Control the output voltage.""",
         validator=strict_range,
         values=[0, 30],
@@ -91,10 +68,86 @@ class  L303SP(SCPIMixin, Instrument):
     )
 
     current_setpoint = Instrument.control(
-        "CURR?",
-        "CURR %g",
+        "CURR?", "CURR %g",
         """Control the output current.""",
         validator=strict_range,
         values=[0, 3],
         dynamic=True,
     )
+
+    output_enabled = Instrument.control(
+        "OUTP:STAT?", "OUTP:STAT %s",
+        """Control whether the output is enabled (boolean).""",
+        validator=strict_discrete_set,
+        map_values=True,
+        values={True: 'ON', False: 'OFF'},
+    )
+    
+    voltage = Instrument.measurement(
+        "MEAS:VOLT?",
+        """Measure the actual voltage"""
+    )
+    
+    current = Instrument.measurement(
+        "MEAS:CURR?",
+        """Measure the actual current"""
+    )
+    
+    power = Instrument.measurement(
+        "MEAS:POW?",
+        """Measure the actual power"""
+    )
+    
+    ovp_setpoint = Instrument.control(
+        "VOLT:PROT?", "VOLT:PROT %g",
+        """Control the over-voltage protection level.""",
+        validator=strict_range,
+        values=[0, 30]
+    )
+    
+    ocp_setpoint = Instrument.control(
+        "CURR:PROT?", "CURR:PROT %g",
+        """Control the over-current protection level.""",
+        validator=strict_range,
+        values=[0, 3]
+    )    
+    
+    ovp_enabled = Instrument.control(
+        "VOLT:PROT:STAT?", "VOLT:PROT:STAT %s",
+        """Control the over-voltage protection on/off.""",
+        validator=strict_discrete_set,
+        map_values=True,
+        values={True: "ON", False: "OFF"} 
+    )
+
+    ocp_enabled = Instrument.control(
+        "CURR:PROT:STAT?", "CURR:PROT:STAT %s",
+        """Control the over-current protection on/off.""",
+        validator=strict_discrete_set,
+        map_values=True,
+        values={True: "ON", False: "OFF"} 
+    )
+    
+    ovp_tripped = Instrument.measurement(
+        "VOLT:PROT:TRIP?",
+        """Read the over-voltage protection trip status.""",
+        map_values=True,
+        values={True: "ON", False: "OFF"}
+    )
+
+    ocp_tripped = Instrument.measurement(
+        "CURR:PROT:TRIP?",
+        """Read the over-voltage protection trip status.""",
+        map_values=True,
+        values={True: "ON", False: "OFF"}
+    )
+    
+    def ovp_clear(self):
+        """Clear the ovp flag and enable the output,"""
+        self.write("VOLT:PROT:CLE")
+
+    def ocp_clear(self):
+        """Clear the ocp flag and enable the output,"""
+        self.write("CURR:PROT:CLE")
+        
+    
