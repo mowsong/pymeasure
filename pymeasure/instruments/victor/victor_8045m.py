@@ -98,11 +98,26 @@ class Victor8045M(SCPIMixin, Instrument):
         validator=strict_discrete_set
     )
     
+    DCV_RANGES   = { 0.05:1, 0.5:2, 5:3, 50:4, 500:5, 1000:6 }
+    DCV_RANGES_R = { '50 mV': 1, '500 mV': 2, '5 V': 3, '50 V': 4, '500 V': 5, '1000 V': 6}
+    
     dcv_range = Instrument.control(
-        "RANGE?", "RANGE %s",
+        "CONF:VOLT:DC; RANGE?", "CONF:VOLT:DC; RANGE %s",
         """Configure the range of the DCV measurement.""",
-        values = { 0.05:1, 0.5:2, 5:3, 50:4, 500:5, 1000:6 },
+        values = DCV_RANGES,
         validator=strict_discrete_set,
         map_values=True,
-        get_process=lambda v : v.replace('V', '').strip()
+        get_process=lambda v : Victor8045M.DCV_RANGES_R[v.strip()]
+    )
+    
+    ACV_RANGES   = { 0.5:1, 5:2, 50:3, 500:4, 750:5}
+    ACV_RANGES_R = { '500 mV': 1, '5 V': 2, '50 V': 3, '500 V': 4, '750 V': 5}
+    
+    acv_range = Instrument.control(
+        "RANGE?", "CONF:VOLT:AC; RANGE %s",
+        """Configure the range of the ACV measurement.""",
+        values = ACV_RANGES,
+        validator=strict_discrete_set,
+        map_values=True,
+        get_process=lambda v : Victor8045M.ACV_RANGES_R[v.strip()]
     )
