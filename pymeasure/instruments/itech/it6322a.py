@@ -33,7 +33,8 @@ log.addHandler(logging.NullHandler())
 
 class VoltageChannel(Channel):
     voltage_setpoint = Channel.control(
-        "INST:NSEL {ch}; VOLT?", "INST:NSEL {ch}; VOLT %g",
+        "APPL CH{ch}; VOLT?",
+        "APPL CH{ch}; VOLT %g",
         """Control the output voltage of this channel, range depends on channel.""",
         validator=strict_range,
         values=[0, 30],
@@ -41,7 +42,8 @@ class VoltageChannel(Channel):
     )
 
     current_setpoint = Channel.control(
-        "INST:NSEL {ch}; CURR?", "INST:NSEL {ch}; CURR %g",
+        "APPL CH{ch}; CURR?",
+        "APPL CH{ch}; CURR  %g",
         """Control the current limit of this channel, range depends on channel.""",
         validator=strict_range,
         values=[0, 1],
@@ -49,23 +51,24 @@ class VoltageChannel(Channel):
     )
 
     voltage = Channel.measurement(
-        "INST:NSEL {ch}; MEAS:VOLT?",
+        "APPL CH{ch}; MEAS:VOLT?",
         """Measure actual voltage of this channel."""
     )
 
     current = Channel.measurement(
-        "INST:NSEL {ch}; MEAS:CURR?",
+        "APPL CH{ch}; MEAS:CURR?",
         """Measure the actual current of this channel."""
     )
 
 
     power = Channel.measurement(
-        "INST:NSEL {ch}; MEAS:POW?",
+        "APPL CH{ch}; MEAS:POW?",
         """Measure the actual power of this channel."""
     )
 
     output_enabled = Channel.control(
-        "INST:NSEL {ch}; CHAN:OUTP?", "INST:NSEL {ch}; CHAN:OUTP %s",
+        "APPL CH{ch}; CHAN:OUTP?", 
+        "APPL CH{ch}; CHAN:OUTP %s",
         """Control whether the channel output is enabled (boolean).""",
         validator=strict_discrete_set,
         map_values=True,
@@ -73,21 +76,24 @@ class VoltageChannel(Channel):
     )
 
     ovp_setpoint = Channel.control(
-        "INST:NSEL {ch}; VOLT:PROT?", "INST:NSEL {ch}; VOLT:PROT %g",
+        "APPL CH{ch}; VOLT:PROT?", 
+        "APPL CH{ch}; VOLT:PROT %g",
         """Control the over-voltage protection level""",
         validator=strict_range,
         values=[0, 30],
     )
     
     ocp_setpoint = Channel.control(
-        "INST:NSEL {ch}; CURR:PROT?", "INST:NSEL {ch}; CURR:PROT %g",
+        "APPL CH{ch}; CURR:PROT?", 
+        "APPL CH{ch}; CURR:PROT %g",
         """Control the over-current protection level""",
         validator=strict_range,
         values=[0, 3],
     )
    
     ovp_enabled = Channel.control(
-        "INST:NSEL {ch}; VOLT:PROT:STAT?", "INST:NSEL {ch}; VOLT:PROT:STAT %d",
+        "APPL CH{ch}; VOLT:PROT:STAT?", 
+        "APPL CH{ch}; VOLT:PROT:STAT %d",
         """Control the over-voltage protection on/off""",
         validator=strict_discrete_set,
         map_values=True,
